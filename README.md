@@ -16,3 +16,13 @@ npm start or yarn start
 ```
 npm test or yarn test
 ```
+## Technologies
+- React
+- React Router
+- Redux
+- Redux Thunk
+- Stylled-Components
+- Axios
+
+## API
+[PunkApi](https://punkapi.com/)
