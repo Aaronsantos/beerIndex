@@ -1,63 +1,71 @@
-import React from 'react'
-import BeerService from '../../util/BeerService'
-import { withRouter } from 'react-router'
-import { Link } from 'react-router-dom'
+import React from "react";
+import { withRouter } from "react-router";
+import BeerListItem from "../presentional/BeerListItem";
+import { loadData } from "../../store/actions";
+import { connect } from "react-redux";
+import Loading from "../presentional/Loading";
 
-function BeerList() {
+const mapStateToProps = state => {
+  return {
+    beers: state.beers,
+    next: state.next,
+    error: state.error,
+    loaded: state.loaded
+  };
+};
 
-    const [beerList, setbeerList] = React.useState({})
-    const [loaded, setloaded] = React.useState(false)
-    const [next, setnext] = React.useState(1)
-    const [error, seterror] = React.useState(false)
+function ConnectedBeerList(props) {
+  const firstRender = React.useRef(true);
 
-    const firstRender = React.useRef(true)
+  const clickHandler = id => {
+    console.log("olha o redirect");
+    props.history.push(`beer/${id}`);
+  };
 
-    const getBeers = async () => {
+  const scrollHandler = () => {
+    if (
+      window.innerHeight + document.documentElement.scrollTop + 5 >=
+      document.documentElement.offsetHeight
+    ) {
+      if (!props.next || props.error) return;
 
-        let newBeerList = await BeerService.getList(next, 20)
-        if (Object.keys(newBeerList).length > 0) {
-            setbeerList({ ...beerList, ...newBeerList })
-            setnext(next + 1)
-        } else {
-            console.log("No more beers")
-            setnext(false)
-        }
+      if (props.loaded) props.loadData(props.next);
     }
-    const scrollHandler = () => {
-        if (window.innerHeight + document.documentElement.scrollTop
-            >= document.documentElement.offsetHeight) {
-            if (!next || error) return
+  };
 
-            getBeers()
-        }
+  React.useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      props.loadData(props.next);
     }
+    scrollHandler();
+  });
 
-    React.useEffect(() => {
+  window.onscroll = scrollHandler;
 
-        if (firstRender.current) {
-            firstRender.current = false
-            getBeers()
-        };
-        scrollHandler()
-    })
-
-    window.onscroll = scrollHandler
-
-
-
-    return (
-        <div>
-            <ul>
-                {Object.keys(beerList).map(id => {
-                    return (<li key={id}> <Link to={`/beer/${id}`}>{`${beerList[id].name} - ${beerList[id].tagline}`}</Link></li>)
-                })}
-
-            </ul>
-            {
-                next ? "" : <p>No more Beers to show </p>
-            }
-        </div>
-    )
+  return (
+    <div>
+      <ul>
+        {Object.keys(props.beers).map(id => {
+          return (
+            <BeerListItem
+              key={id}
+              name={props.beers[id].name}
+              tagline={props.beers[id].tagline}
+              click={() => clickHandler(id)}
+            />
+          );
+        })}
+      </ul>
+      {!props.loaded ? <Loading /> : ""}
+      {props.next ? "" : <p>No more Beers to show </p>}
+    </div>
+  );
 }
 
-export default withRouter(BeerList)
+export default withRouter(
+  connect(
+    mapStateToProps,
+    { loadData }
+  )(ConnectedBeerList)
+);
